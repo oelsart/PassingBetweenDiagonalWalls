@@ -44,15 +44,15 @@ namespace PassingBetweenDiagonalWalls
                 {
                     var label = codes[i + 1].operand;
                     yield return CodeInstruction.StoreField(typeof(Patch_PathFinder_FindPath), "tmpIndex");
-                    yield return CodeInstruction.LoadLocal(38);
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, Convert.ToByte(40));
                     yield return CodeInstruction.LoadField(typeof(Patch_PathFinder_FindPath), "tmpIndex");
-                    yield return CodeInstruction.LoadLocal(33);
-                    yield return CodeInstruction.LoadArgument(0);
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, Convert.ToByte(35));
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
                     yield return CodeInstruction.LoadField(typeof(PathFinder), "pathingContext");
                     yield return CodeInstruction.LoadField(typeof(PathingContext), "map");
                     yield return CodeInstruction.Call(typeof(Patch_PathFinder_FindPath), "AllowsDiagonalMovement");
                     yield return new CodeInstruction(OpCodes.Brtrue, label);
-                    yield return CodeInstruction.LoadArgument(0);
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
                     yield return CodeInstruction.LoadField(typeof(Patch_PathFinder_FindPath), "tmpIndex");
                 }
 

@@ -9,6 +9,7 @@ This is a patch mod that allows you to pass through a diagonal path for one squa
   <url></url>
 
   <supportedVersions>
+    <li>1.4</li>
     <li>1.5</li>
   </supportedVersions>
 

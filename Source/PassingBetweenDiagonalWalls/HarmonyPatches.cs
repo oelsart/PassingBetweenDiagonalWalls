@@ -69,7 +69,7 @@ namespace PassingBetweenDiagonalWalls
             {
                 return true;
             }
-            if (Patch_PathFinder_FindPath.defNames.Contains(building.def.defName))
+            if (PassingBetweenDiagonalWalls.diagonalWallDefNames.Contains(building.def.defName))
             {
                 var graphic_Linked = building.def.graphicData.Graphic as Graphic_Linked;
                 return (graphic_Linked.ShouldLinkWith(building.Position + (building.Position - intVec), building) ||
@@ -81,18 +81,6 @@ namespace PassingBetweenDiagonalWalls
         }
 
         public static int tmpIndex;
-
-        public static readonly string[] defNames = new string[]
-        {
-            "rgh_DiagonalWall",
-            "rgh_ConnectorWallR",
-            "rgh_ConnectorWallL",
-            "rgh_DiagonalDoorwayA",
-            "rgh_DiagonalDoorwayB",
-            "rgh_DiagonalEmbrasure",
-            "rgh_ConnectorEmbrasureR",
-            "rgh_ConnectorEmbrasureL"
-        };
 
         public static readonly IntVec3[] directions = new IntVec3[]
         {
@@ -112,7 +100,7 @@ namespace PassingBetweenDiagonalWalls
             var cellIndices = ___map.cellIndices;
             var edificeGrid = ___map.edificeGrid;
             var directions = Patch_PathFinder_FindPath.directions;
-            var defNames = Patch_PathFinder_FindPath.defNames;
+            var defNames = PassingBetweenDiagonalWalls.diagonalWallDefNames;
             foreach (var cell in __result.Cells)
             {
                 for (var i = 0; i < 4; i++)

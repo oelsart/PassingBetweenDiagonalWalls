@@ -1,15 +1,11 @@
-﻿using System;
+﻿using HarmonyLib;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Verse;
-using HarmonyLib;
 using System.Reflection;
-using Verse.AI;
 using System.Reflection.Emit;
-using System.Collections;
-using RimWorld;
+using Verse;
+using Verse.AI;
 
 namespace PassingBetweenDiagonalWalls
 {
@@ -26,7 +22,7 @@ namespace PassingBetweenDiagonalWalls
     [HarmonyPatch(typeof(PathFinder), "FindPath", typeof(IntVec3), typeof(LocalTargetInfo), typeof(TraverseParms), typeof(PathEndMode), typeof(PathFinderCostTuning))]
     public static class Patch_PathFinder_FindPath
     {
-        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             var codes = instructions.ToList();
             var method = AccessTools.Method(typeof(PathFinder), "BlocksDiagonalMovement", new Type[] { typeof(int) });

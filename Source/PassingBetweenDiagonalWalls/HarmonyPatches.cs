@@ -22,10 +22,11 @@ namespace PassingBetweenDiagonalWalls
     [HarmonyPatch(typeof(PathFinder), "FindPath", typeof(IntVec3), typeof(LocalTargetInfo), typeof(TraverseParms), typeof(PathEndMode), typeof(PathFinderCostTuning))]
     public static class Patch_PathFinder_FindPath
     {
-        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var codes = instructions.ToList();
             var method = AccessTools.Method(typeof(PathFinder), "BlocksDiagonalMovement", new Type[] { typeof(int) });
+            var tmpIndex = generator.DeclareLocal(typeof(int));
             codes = codes.Select((c, i) => {
                 if ((c.opcode == OpCodes.Ldarg_0) && (codes[i + 4].operand as MethodInfo == method || codes[i + 5].operand as MethodInfo == method))
                 {
@@ -39,9 +40,9 @@ namespace PassingBetweenDiagonalWalls
                 if (code.opcode == OpCodes.Call && code.operand.Equals(method))
                 {
                     var label = codes[i + 1].operand;
-                    yield return CodeInstruction.StoreField(typeof(Patch_PathFinder_FindPath), "tmpIndex");
+                    yield return new CodeInstruction(OpCodes.Stloc_S, tmpIndex);
                     yield return new CodeInstruction(OpCodes.Ldloc_S, Convert.ToByte(40));
-                    yield return CodeInstruction.LoadField(typeof(Patch_PathFinder_FindPath), "tmpIndex");
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, tmpIndex);
                     yield return new CodeInstruction(OpCodes.Ldloc_S, Convert.ToByte(35));
                     yield return new CodeInstruction(OpCodes.Ldarg_0);
                     yield return CodeInstruction.LoadField(typeof(PathFinder), "pathingContext");
@@ -49,7 +50,7 @@ namespace PassingBetweenDiagonalWalls
                     yield return CodeInstruction.Call(typeof(Patch_PathFinder_FindPath), "AllowsDiagonalMovement");
                     yield return new CodeInstruction(OpCodes.Brtrue, label);
                     yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    yield return CodeInstruction.LoadField(typeof(Patch_PathFinder_FindPath), "tmpIndex");
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, tmpIndex);
                 }
 
                 yield return code;
@@ -75,8 +76,6 @@ namespace PassingBetweenDiagonalWalls
             }
             return false;
         }
-
-        public static int tmpIndex;
 
         public static readonly string[] defNames = new string[]
         {
@@ -142,6 +141,19 @@ namespace PassingBetweenDiagonalWalls
         public static void Postfix(ref bool __result, ThingDef __instance)
         {
             __result = __result || __instance.thingClass.Name == "Building_DiagonalDoor";
+        }
+    }
+
+    [HarmonyPatch(typeof(PathGrid), nameof(PathGrid.CalculatedCostAt))]
+    public static class Patch_PathGrid_CalculatedCostAt
+    {
+        public static void Postfix(ref int __result, IntVec3 c, Map ___map)
+        {
+            var building = c.GetEdifice(___map);
+            if (building != null && PassingBetweenDiagonalWalls.diagonalWallDefNames.Contains(building.def.defName))
+            {
+                __result = 9999;
+            }
         }
     }
 }

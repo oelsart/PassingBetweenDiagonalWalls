@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
   <name>Passing Between Diagonal Walls</name>
-  <packageId>oels.passingbetweendiagonalwalls</packageId>
+  <packageId>oels.passingbetweendiagonalwallsexperimental</packageId>
   <author>OELS</author>
   <description>Diagonal Walls 2の壁でできた1マス分の斜めの道を通ることができるようにするパッチMODです。
 This is a patch mod that allows you to pass through a diagonal path for one square made by Diagonal Walls 2 walls.

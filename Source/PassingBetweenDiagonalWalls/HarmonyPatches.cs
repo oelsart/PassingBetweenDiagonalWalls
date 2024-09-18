@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Verse;
 using Verse.AI;
+using Verse.Noise;
 
 namespace PassingBetweenDiagonalWalls
 {
@@ -16,6 +17,12 @@ namespace PassingBetweenDiagonalWalls
         {
             var harmony = new Harmony("com.harmony.rimworld.passingbetweendiagonalwalls");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
+            if (ModsConfig.IsActive("owlchemist.cleanpathfinding"))
+            {
+                var original = AccessTools.Method(typeof(RegionTypeUtility), nameof(RegionTypeUtility.GetExpectedRegionType));
+                var patch = AccessTools.Method(typeof(Patch_RegionTypeUtility_GetExpectedRegionType), nameof(Patch_RegionTypeUtility_GetExpectedRegionType.Postfix));
+                harmony.Patch(original, null, patch);
+            }
         }
     }
 
@@ -132,15 +139,15 @@ namespace PassingBetweenDiagonalWalls
         }
     }
 
-    [HarmonyPatch(typeof(PathGrid), nameof(PathGrid.CalculatedCostAt))]
-    public static class Patch_PathGrid_CalculatedCostAt
+    public static class Patch_RegionTypeUtility_GetExpectedRegionType
     {
-        public static void Postfix(ref int __result, IntVec3 c, Map ___map)
+        public static void Postfix(IntVec3 c, Map map, ref RegionType __result)
         {
-            var building = c.GetEdifice(___map);
+            if (!c.InBounds(map)) return;
+            var building = c.GetEdifice(map);
             if (building != null && PassingBetweenDiagonalWalls.diagonalWallDefNames.Contains(building.def.defName))
             {
-                __result = 9999;
+                __result = RegionType.Set_Passable;
             }
         }
     }

@@ -16,7 +16,7 @@ namespace PassingBetweenDiagonalWalls
         {
             var harmony = new Harmony("com.harmony.rimworld.passingbetweendiagonalwalls");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
-            if (ModsConfig.IsActive("owlchemist.cleanpathfinding"))
+            if (ModsConfig.IsActive("owlchemist.cleanpathfinding") || ModsConfig.IsActive("pathfinding.framework"))
             {
                 var original = AccessTools.Method(typeof(RegionTypeUtility), nameof(RegionTypeUtility.GetExpectedRegionType));
                 var patch = AccessTools.Method(typeof(Patch_RegionTypeUtility_GetExpectedRegionType), nameof(Patch_RegionTypeUtility_GetExpectedRegionType.Postfix));

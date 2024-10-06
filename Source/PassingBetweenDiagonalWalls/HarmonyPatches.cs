@@ -17,12 +17,12 @@ namespace PassingBetweenDiagonalWalls
         {
             var harmony = new Harmony("com.harmony.rimworld.passingbetweendiagonalwalls");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
-            if (ModsConfig.IsActive("owlchemist.cleanpathfinding") || ModsConfig.IsActive("pathfinding.framework"))
+            /*if (ModsConfig.IsActive("owlchemist.cleanpathfinding") || ModsConfig.IsActive("pathfinding.framework"))
             {
                 var original = AccessTools.Method(typeof(RegionTypeUtility), nameof(RegionTypeUtility.GetExpectedRegionType));
                 var patch = AccessTools.Method(typeof(Patch_RegionTypeUtility_GetExpectedRegionType), nameof(Patch_RegionTypeUtility_GetExpectedRegionType.Postfix));
                 harmony.Patch(original, null, patch);
-            }
+            }*/
         }
     }
 
@@ -139,6 +139,7 @@ namespace PassingBetweenDiagonalWalls
         }
     }
 
+    [HarmonyPatch(typeof(RegionTypeUtility), nameof(RegionTypeUtility.GetExpectedRegionType))]
     public static class Patch_RegionTypeUtility_GetExpectedRegionType
     {
         public static void Postfix(IntVec3 c, Map map, ref RegionType __result)

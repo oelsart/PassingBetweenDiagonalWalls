@@ -153,6 +153,7 @@ namespace PassingBetweenDiagonalWalls
                             Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num1, cell, ___map) && Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num2, cell, ___map))
                         {
                             var regionLink = new RegionLink();
+                            regionLink.span = new EdgeSpan(__result.AnyCell, SpanDirection.North, 0);
                             regionLink.Register(__result);
                             regionLink.Register(another);
                             another.type = __result.type;

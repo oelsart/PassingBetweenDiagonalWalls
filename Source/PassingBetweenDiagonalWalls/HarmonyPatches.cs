@@ -76,8 +76,8 @@ namespace PassingBetweenDiagonalWalls
             {
                 var graphic_Linked = building.def.graphicData.Graphic as Graphic_Linked;
                 return (graphic_Linked.ShouldLinkWith(building.Position + (building.Position - intVec), building) ||
-                    graphic_Linked.ShouldLinkWith(building.Position - (intVec + directions[i - 4] - building.Position), building)) &&
-                    !graphic_Linked.ShouldLinkWith(intVec + directions[i - 4], building) &&
+                    graphic_Linked.ShouldLinkWith(building.Position - (intVec + directions[i % 4] - building.Position), building)) &&
+                    !graphic_Linked.ShouldLinkWith(intVec + directions[i % 4], building) &&
                     !graphic_Linked.ShouldLinkWith(intVec, building); ;
             }
             return false;
@@ -104,6 +104,30 @@ namespace PassingBetweenDiagonalWalls
         };
     }
 
+    [HarmonyPatch(typeof(RegionCostCalculator), "PathableNeighborIndices")]
+    public static class Patch_RegionCostCalculator_PathableNeighborIndices
+    {
+        public static void Postfix(int index, Map ___map, PathingContext ___pathingContext, List<int> __result)
+        {
+            var cellIndices = ___map.cellIndices;
+            var edificeGrid = ___map.edificeGrid;
+            var intVec = cellIndices.IndexToCell(index);
+            var directions = Patch_PathFinder_FindPath.directions;
+            for (var i = 0; i < 4; i++)
+            {
+                var cardinal1 = new IntVec3(directions[i].x, 0, 0);
+                var cardinal2 = new IntVec3(0, 0, directions[i].z);
+                var num1 = cellIndices.CellToIndex(intVec + cardinal1);
+                var num2 = cellIndices.CellToIndex(intVec + cardinal2);
+                if ((edificeGrid[num1] == null || Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num1, intVec, ___map)) &&
+                    (edificeGrid[num2] == null || Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num2, intVec, ___map)))
+                {
+                    __result.Add(cellIndices.CellToIndex(intVec + directions[i]));
+                }
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(RegionMaker), "TryGenerateRegionFrom")]
     public static class Patch_RegionMaker_TryGenerateRegionFrom
     {
@@ -126,7 +150,7 @@ namespace PassingBetweenDiagonalWalls
                         var num1 = cellIndices.CellToIndex(cell + cardinal1);
                         var num2 = cellIndices.CellToIndex(cell + cardinal2);
                         if (defNames.Contains(edificeGrid[num1]?.def.defName) && defNames.Contains(edificeGrid[num2]?.def.defName) &&
-                            Patch_PathFinder_FindPath.AllowsDiagonalMovement(i + 4, num1, cell, ___map) && Patch_PathFinder_FindPath.AllowsDiagonalMovement(i + 4, num2, cell, ___map))
+                            Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num1, cell, ___map) && Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num2, cell, ___map))
                         {
                             var regionLink = new RegionLink();
                             regionLink.Register(__result);
@@ -134,6 +158,10 @@ namespace PassingBetweenDiagonalWalls
                             another.type = __result.type;
                             __result.links.Add(regionLink);
                             another.links.Add(regionLink);
+                            foreach (var oldLink in another.links.Where(l => l.regions.Any(r => r == null)).ToArray())
+                            {
+                                another.links.Remove(oldLink);
+                            }
                         }
                     }
                 }
@@ -159,7 +187,7 @@ namespace PassingBetweenDiagonalWalls
             var building = c.GetEdifice(map);
             if (building != null && PassingBetweenDiagonalWalls.diagonalWallDefNames.Contains(building.def.defName))
             {
-                __result = RegionType.Set_Passable;
+                __result = RegionType.Set_Impassable;
             }
         }
     }

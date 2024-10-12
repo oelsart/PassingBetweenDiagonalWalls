@@ -235,7 +235,7 @@ namespace PassingBetweenDiagonalWalls
             var building = c.GetEdifice(map);
             if (building != null && PassingBetweenDiagonalWalls.diagonalWallDefNames.Contains(building.def.defName))
             {
-                __result = RegionType.Set_Passable;
+                __result = (RegionType)17;
             }
         }
     }

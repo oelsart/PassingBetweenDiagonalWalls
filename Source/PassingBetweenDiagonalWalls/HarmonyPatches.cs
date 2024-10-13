@@ -106,13 +106,11 @@ namespace PassingBetweenDiagonalWalls
             var directions = Patch_PathFinder_FindPath.directions;
             for (var i = 0; i < 4; i++)
             {
+                if (!(intVec + directions[i]).InBounds(___map)) continue;
                 var cardinal1 = new IntVec3(directions[i].x, 0, 0);
                 var cardinal2 = new IntVec3(0, 0, directions[i].z);
-                var adja1 = intVec + cardinal1;
-                var adja2 = intVec + cardinal2;
-                if (!adja1.InBounds(___map) || !adja2.InBounds(___map)) continue;
-                var num1 = cellIndices.CellToIndex(adja1);
-                var num2 = cellIndices.CellToIndex(adja2);
+                var num1 = cellIndices.CellToIndex(intVec + cardinal1);
+                var num2 = cellIndices.CellToIndex(intVec + cardinal2);
                 if ((edificeGrid[num1] == null || Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num1, intVec, ___map)) &&
                     (edificeGrid[num2] == null || Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num2, intVec, ___map)))
                 {

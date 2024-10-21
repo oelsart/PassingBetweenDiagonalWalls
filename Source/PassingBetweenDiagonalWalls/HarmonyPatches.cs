@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -95,30 +96,30 @@ namespace PassingBetweenDiagonalWalls
         };
     }
 
-    [HarmonyPatch(typeof(RegionCostCalculator), "PathableNeighborIndices")]
-    public static class Patch_RegionCostCalculator_PathableNeighborIndices
-    {
-        public static void Postfix(int index, Map ___map, PathingContext ___pathingContext, List<int> __result)
-        {
-            var cellIndices = ___map.cellIndices;
-            var edificeGrid = ___map.edificeGrid;
-            var intVec = cellIndices.IndexToCell(index);
-            var directions = Patch_PathFinder_FindPath.directions;
-            for (var i = 0; i < 4; i++)
-            {
-                if (!(intVec + directions[i]).InBounds(___map)) continue;
-                var cardinal1 = new IntVec3(directions[i].x, 0, 0);
-                var cardinal2 = new IntVec3(0, 0, directions[i].z);
-                var num1 = cellIndices.CellToIndex(intVec + cardinal1);
-                var num2 = cellIndices.CellToIndex(intVec + cardinal2);
-                if ((edificeGrid[num1] == null || Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num1, intVec, ___map)) &&
-                    (edificeGrid[num2] == null || Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num2, intVec, ___map)))
-                {
-                    __result.Add(cellIndices.CellToIndex(intVec + directions[i]));
-                }
-            }
-        }
-    }
+    //[HarmonyPatch(typeof(RegionCostCalculator), "PathableNeighborIndices")]
+    //public static class Patch_RegionCostCalculator_PathableNeighborIndices
+    //{
+    //    public static void Postfix(int index, Map ___map, List<int> __result)
+    //    {
+    //        var cellIndices = ___map.cellIndices;
+    //        var edificeGrid = ___map.edificeGrid;
+    //        var intVec = cellIndices.IndexToCell(index);
+    //        var directions = Patch_PathFinder_FindPath.directions;
+    //        for (var i = 0; i < 4; i++)
+    //        {
+    //            if (!(intVec + directions[i]).InBounds(___map)) continue;
+    //            var cardinal1 = new IntVec3(directions[i].x, 0, 0);
+    //            var cardinal2 = new IntVec3(0, 0, directions[i].z);
+    //            var num1 = cellIndices.CellToIndex(intVec + cardinal1);
+    //            var num2 = cellIndices.CellToIndex(intVec + cardinal2);
+    //            if ((edificeGrid[num1] == null || Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num1, intVec, ___map)) &&
+    //                (edificeGrid[num2] == null || Patch_PathFinder_FindPath.AllowsDiagonalMovement(i, num2, intVec, ___map)))
+    //            {
+    //                __result.Add(cellIndices.CellToIndex(intVec + directions[i]));
+    //            }
+    //        }
+    //    }
+    //}
 
     [HarmonyPatch(typeof(RegionMaker), "TryGenerateRegionFrom")]
     public static class Patch_RegionMaker_TryGenerateRegionFrom
@@ -238,6 +239,47 @@ namespace PassingBetweenDiagonalWalls
             {
                 __result = (RegionType)17;
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(Designator_PaintFloor), nameof(Designator_PaintFloor.CanDesignateCell))]
+    public static class Patch_Designator_PaintFloor_CanDesignateCell
+    {
+        public static IEnumerable<CodeInstruction> Transpiler (IEnumerable<CodeInstruction> instructions)
+        {
+            var codes = instructions.ToList();
+
+            var f_def_passability = AccessTools.Field(typeof(BuildableDef), nameof(BuildableDef.passability));
+            var pos = codes.FindIndex(c => c.opcode == OpCodes.Ldfld && c.OperandIs(f_def_passability));
+            pos = codes.FindIndex(pos, c => c.opcode == OpCodes.Bne_Un_S);
+            var label = codes[pos].operand;
+            pos = codes.FindIndex(pos, c => c.opcode == OpCodes.Ldc_I4_0);
+
+            codes.InsertRange(pos, new[]
+            {
+                CodeInstruction.LoadField(typeof(PassingBetweenDiagonalWalls), nameof(PassingBetweenDiagonalWalls.diagonalWallDefNames)),
+                CodeInstruction.LoadLocal(0),
+                CodeInstruction.LoadField(typeof(Thing), nameof(Thing.def)),
+                CodeInstruction.LoadField(typeof(Def), nameof(Def.defName)),
+                new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(List<string>), nameof(List<string>.Contains))),
+                new CodeInstruction(OpCodes.Brtrue_S, label),
+            });
+            return codes;
+        }
+    }
+
+    [HarmonyPatch(typeof(Designator_RemoveFloor), nameof(Designator_RemoveFloor.CanDesignateCell))]
+    public static class Patch_Designator_RemoveFloor_CanDesignateCell
+    {
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) => Patch_Designator_PaintFloor_CanDesignateCell.Transpiler(instructions);
+    }
+
+    [HarmonyPatch(typeof(SmoothSurfaceDesignatorUtility), nameof(SmoothSurfaceDesignatorUtility.CanSmoothFloorUnder))]
+    public static class Patch_SmoothSurfaceDesignatorUtility_CanSmoothFloorUnder
+    {
+        public static void Postfix(Building b, ref bool __result)
+        {
+            __result = __result || PassingBetweenDiagonalWalls.diagonalWallDefNames.Contains(b.def.defName);
         }
     }
 }
